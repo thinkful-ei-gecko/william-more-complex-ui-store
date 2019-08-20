@@ -7,7 +7,8 @@ const STORE = {
     {id: cuid(), name: "milk", checked: true},
     {id: cuid(), name: "bread", checked: false}
   ],
-  hideCompleted: false
+  hideCompleted: false,
+  searchTerm: null
 };
 
 function generateItemElement(item) {
@@ -21,6 +22,9 @@ function generateItemElement(item) {
         <button class="shopping-item-delete js-item-delete">
             <span class="button-label">delete</span>
         </button>
+        <button class="shopping-item-edit js-item-edit">
+            <span class="button-label">edit</span>
+        </button>
       </div>
     </li>`;
 }
@@ -31,7 +35,7 @@ function generateShoppingItemsString(shoppingList) {
 
   const items = shoppingList.map((item) => generateItemElement(item));
   
-  return items.join("");
+  return items.join('');
 }
 
 
@@ -42,11 +46,18 @@ function renderShoppingList() {
   // set up a copy of the store's items in a local variable that we will reassign to a new
   // version if any filtering of the list occurs
   let filteredItems = STORE.items;
-
+  
   // if the `hideCompleted` property is true, then we want to reassign filteredItems to a version
   // where ONLY items with a "checked" property of false are included
   if (STORE.hideCompleted) {
     filteredItems = filteredItems.filter(item => !item.checked);
+  }
+
+
+  // If the 'searchTerm has a value AKA the user input into the search field...Items array in STORE will filter to ONLY
+  // include objects that match the name of the user input defined through function setSearchTerm
+  if (STORE.searchTerm !== null) {
+    filteredItems = filteredItems.filter(item => item.name === STORE.searchTerm);
   }
 
   // at this point, all filtering work has been done (or not done, if that's the current settings), so
@@ -137,6 +148,66 @@ function handleToggleHideFilter() {
   });
 }
 
+
+
+function setSearchTerm() {
+  let userInput = $('.js-show-searched').val();
+  console.log(userInput);
+  STORE.searchTerm = userInput;
+}
+
+
+function handleSearchFilter() {
+  console.log('event handler ran');
+  $('.filter-search-term').on('submit', event => {
+    event.preventDefault();
+    console.log('form submitted');
+
+    setSearchTerm();
+    renderShoppingList();
+  });
+}
+
+
+function handleSearchClear() {
+  console.log('am i working?');
+  $('.clear-button').on('click', function(event) {
+    STORE.searchTerm = null;
+    console.log(STORE.searchTerm);
+
+    // $(this).val(''); ----> This should be removing the input value after Clear is clicked, but it is not working....
+
+    renderShoppingList();
+  });
+}
+
+
+// Do we want a text field to show up in the li to allow you to edit once clicked?
+// Do we
+// replace it with an input field
+
+function editItemName(itemId) {
+  let itemObject = STORE.items.find(item => item.id === itemId);
+  let newName = prompt('Edit name');
+  itemObject.name = newName;
+}
+
+
+
+function handleEditButton() {
+  $('.js-shopping-list').on('click', '.js-item-edit', function(event) {
+    console.log('edit clicked');
+    
+    let itemId = getItemIdFromElement(event.currentTarget);
+    editItemName(itemId);
+    renderShoppingList();
+  });
+}
+
+
+
+
+
 // this function will be our callback when the page loads. it's responsible for
 // initially rendering the shopping list, and activating our individual functions
 // that handle new item submission and user clicks on the "check" and "delete" buttons
@@ -147,7 +218,11 @@ function handleShoppingList() {
   handleItemCheckClicked();
   handleDeleteItemClicked();
   handleToggleHideFilter();
+  handleSearchFilter();
+  handleSearchClear();
+  handleEditButton();
 }
 
 // when the page loads, call `handleShoppingList`
 $(handleShoppingList);
+
